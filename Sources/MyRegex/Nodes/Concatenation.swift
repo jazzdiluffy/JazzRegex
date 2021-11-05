@@ -1,0 +1,37 @@
+//
+//  File.swift
+//  
+//
+//  Created by Ilya Buldin on 04.11.2021.
+//
+
+import Foundation
+
+
+final class Concatenation: BinaryNode {
+    
+    init(left: Node, right: Node) {
+        super.init(workingToken: Token(tag: Tag.getConcatenationTag()), left: left, right: right)
+    }
+    
+    override func clone() -> Node {
+        let newNode = Concatenation(left: leftNode.clone(), right: rightNode.clone())
+        
+        return newNode
+    }
+    
+    override func printNode(tabsNum: Int) {
+        let tabs = String(repeating: "-", count: tabsNum)
+        
+        var s = ""
+        if token.tag < 256 {
+            s = String(UnicodeScalar(UInt8(token.tag)))
+        } else {
+            s = String(token.tag)
+        }
+        
+        print("\(tabs)⚔️ Concatenation Node with tag \"\(s)\":\n")
+        leftNode.printNode(tabsNum: tabsNum+1)
+        rightNode.printNode(tabsNum: tabsNum+1)
+    }
+}

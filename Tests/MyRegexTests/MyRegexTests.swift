@@ -293,8 +293,7 @@
         }
         
         func testInitNFA() {
-            let nfa = NFA(alphabet: ["a", "b", "c"],
-                          states: ["A", "B", "C", "D", "E", "F", "G", "H", "J", "K"],
+            let nfa = NFA(states: ["A", "B", "C", "D", "E", "F", "G", "H", "J", "K"],
                           initState: "A",
                           acceptStates: ["K"],
                           ts: [
@@ -339,18 +338,14 @@
         }
         
         func testSth() {
-            //            print(Tag.getGrilleTag())
-            //            print(Tag.getEmptyTag())
-            //            print(Tag.getOrTag())
-            //            print(Tag.getConcatenationTag())
-            //            print(Tag.getPositiveClosureTag())
-            //            print(Tag.getRepeatExpressionTag())
-            //            print(Tag.getCaptureTag())
-            //            print(Tag.getGroupTag())
-            //            print(Tag.getEOSTag())
-            
-            
-            
+//                        print(Tag.getGrilleTag())
+//                        print(Tag.getEmptyTag())
+//                        print(Tag.getOrTag())
+//                        print(Tag.getConcatenationTag())
+//                        print(Tag.getPositiveClosureTag())
+//                        print(Tag.getRepeatExpressionTag())
+//                        print(Tag.getGroupTag())
+//                        print(Tag.getEOSTag())
         }
       
         
@@ -391,7 +386,7 @@
         }
         
         func testParser5() {
-            let lexer = Lexer(withPattern: "(1:a)ab\\1")
+            let lexer = Lexer(withPattern: "(1:a)a^b\\1")
             let parser = Parser(lexer: lexer)
             
             parser.program()
@@ -407,6 +402,14 @@
         }
         
         
+        func testParser10() {
+            let lexer = Lexer(withPattern: "((1:a)|(2:b))\\1|\\2")
+            let parser = Parser(lexer: lexer)
+            
+            parser.program()
+            parser.root?.printNode(tabsNum: 0)
+        }
+        
         func testParser7() {
             let lexer = Lexer(withPattern: "a|((a|b){2,5}bc(1:a|b)f+\\1)#|")
             let parser = Parser(lexer: lexer)
@@ -417,13 +420,56 @@
         
         
         func testParser8() {
-            let lexer = Lexer(withPattern: "a{2,5}b)")
+            let lexer = Lexer(withPattern: "(1:a|b)\\1")
             let parser = Parser(lexer: lexer)
             
             parser.program()
             parser.root?.printNode(tabsNum: 0)
         }
         
+        func testLiteralTypeTransformation() {
+            let s = String(UnicodeScalar(UInt8(97)))
+            print(s)
+            let literal = Literal(token: Token(tag: 97))
+            let nfa = STtoNFAFormatter().handleLiteralNode(with: literal)
+            nfa.checkLine(line: "a")
+        }
+        
+        func testEpsilonTypeTransforamtion() {
+            let eps = Literal(token: Token(tag: 94))
+            let nfa = STtoNFAFormatter().handleEpsilonNode(with: eps)
+            nfa.checkLine(line: "^")
+        }
+        
+        func testOrTypeTransformation() {
+            let formatter = STtoNFAFormatter()
+            let literal = Literal(token: Token(tag: 97))
+            let nfa1 = formatter.handleLiteralNode(with: literal)
+            
+            let eps = Literal(token: Token(tag: 98))
+            let nfa2 = formatter.handleLiteralNode(with: eps)
+            
+            let nfa = formatter.handleOrNode(firstNFA: nfa1, secondNFA: nfa2)
+            nfa.printNFAinfo()
+            nfa.checkLine(line: "a")
+        }
+        
+        func testAndTypeTransformation() {
+            let formatter = STtoNFAFormatter()
+            let literal = Literal(token: Token(tag: 97))
+            let nfa1 = formatter.handleLiteralNode(with: literal)
+            
+            let eps = Literal(token: Token(tag: 98))
+            let nfa2 = formatter.handleLiteralNode(with: eps)
+            
+            let nfa3 = formatter.handleOrNode(firstNFA: nfa1, secondNFA: nfa2)
+            
+            let literal2 = Literal(token: Token(tag: 110))
+            let nfa4 = formatter.handleLiteralNode(with: literal2)
+            
+            let nfa = formatter.handleAndNode(firstNFA: nfa3, secondNFA: nfa4)
+            nfa.printNFAinfo()  
+        }
         
     }
     

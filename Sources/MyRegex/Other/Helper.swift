@@ -30,8 +30,8 @@ public struct Table<X: Hashable, Y: Hashable, V> {
     var stored: [Int: V] = [:]
     var storedKeys: Set<MyPair<X, Y>> = []
     
-    public var keys: [(x: X, y:Y)] {
-        var tmp: [(x: X, y:Y)] = []
+    public var keys: [(x: X, y: Y)] {
+        var tmp: [(x: X, y: Y)] = []
         for pair in storedKeys {
             tmp.append((x: pair.x, y: pair.y))
         }

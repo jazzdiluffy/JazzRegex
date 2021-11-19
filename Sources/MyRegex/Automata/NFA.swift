@@ -10,7 +10,7 @@ import Foundation
 final public class NFA<State: Hashable, Symbol: Hashable>: Automata {
     
     // MARK: -Properties
-    var alphabet: Set<Symbol>
+    
     
     var states: Set<State>
     
@@ -27,14 +27,13 @@ final public class NFA<State: Hashable, Symbol: Hashable>: Automata {
     
     // MARK: -Init
     
-    init(alphabet: Set<Symbol>,
-         states: Set<State>,
+    init(states: Set<State>,
          initState: State,
          acceptStates: Set<State>,
          ts: [(start: State, symbol: Symbol?, destination: State)],
          epsTs: [(start: State, destination: State)]) {
         
-        self.alphabet = alphabet
+//        self.alphabet = alphabet
         self.states = states
         self.initState = initState
         self.acceptStates = acceptStates
@@ -78,7 +77,7 @@ final public class NFA<State: Hashable, Symbol: Hashable>: Automata {
             }
         }
         currentStates = self.epsClosureHandlerForStatesSet(states: targetStates)
-        if !(targetStates.isDisjoint(with: acceptStates)) {
+        if !(currentStates.isDisjoint(with: acceptStates)) {
             return .acceptable
         } else if !(currentStates.isEmpty) {
             return .common
@@ -137,7 +136,40 @@ final public class NFA<State: Hashable, Symbol: Hashable>: Automata {
             current = self.transit(with: symbol)
             print("After transition: \(self.currentStates)")
         }
+        print(current == .acceptable ? "Acceptable" : "Not acceptable")
         return current == .acceptable ? true : false
     }
     
+    
+    func printNFAinfo() {
+        print("=====================")
+        print("States: \(states)")
+        print("---------------------")
+        print("Init State: \(initState)")
+        print("---------------------")
+        print("Accept states: \(acceptStates)")
+        print("---------------------")
+        print("Transitions: \n")
+        var result = ""
+        for (start, symbol) in self.transitions.keys {
+            guard let destination = self.transitions[start, symbol] else {
+                fatalError("Table Error: can't get access to value by corrent key!")
+            }
+            result += "\(start) --> \(destination)  { by symbol: \(symbol) } "
+            result += "\n"
+        }
+        print(result)
+        result = ""
+        print("Epsilon transitions: \n")
+        for start in self.epsilonTransitions.keys {
+            guard let destination = self.epsilonTransitions[start] else {
+                fatalError("Table Error: can't get access to value by corrent key!")
+            }
+            result += "\(start) --> \(destination)"
+            result += "\n"
+        }
+        print(result)
+        print("=====================")
+        
+    }
 }

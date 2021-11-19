@@ -27,7 +27,7 @@ protocol Automata {
     
     var initState: State { get set }
     var acceptStates: Set<State> { get set }
-    var alphabet: Set<Symbol> { get set }
+//    var alphabet: Set<Symbol> { get set }
     var states: Set<State> { get set }
     func transit(with symbol: Symbol) -> AutomataStatus?
 }

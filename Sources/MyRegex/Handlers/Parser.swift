@@ -18,7 +18,7 @@ protocol ParserProtocol {
 
 final class Parser: ParserProtocol {
     
-    let lexer: Lexer
+    var lexer: Lexer
     var look: Token
     var table: [Int : Node]
     var root: BinaryNode?
@@ -31,7 +31,7 @@ final class Parser: ParserProtocol {
     }
     
     
-    private func move() {
+    func move() {
         look = lexer.analyze()
     }
     
@@ -40,7 +40,7 @@ final class Parser: ParserProtocol {
         if look.tag == tag {
             move()
         } else {
-            fatalError("Syntax Errorr")
+            fatalError("Bad match")
         }
     }
     
@@ -81,7 +81,7 @@ final class Parser: ParserProtocol {
         return res
     }
     
-    private func literal() -> Node {
+    func literal() -> Node {
         
         var res: Node? = nil
             

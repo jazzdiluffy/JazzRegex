@@ -9,7 +9,7 @@ import Foundation
 
 
 final class CaptureNode: Node {
-    private let child: Node
+    let child: Node
     
     init(child: Node, token: Token) {
         self.child = child

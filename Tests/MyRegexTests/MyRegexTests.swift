@@ -312,51 +312,113 @@
                             ("J", "K"),
                             ("J", "B")
                           ])
-            nfa.checkLine(line: "001100")
+            XCTAssertEqual(true, nfa.checkLine(line: "001100"))
+            XCTAssertEqual(false, nfa.checkLine(line: "00100"))
         }
         
         
-        func testAnalyzingTokenOfCaptureGroup() {
+        func testCorrectAnalyzingTokenOfCaptureGroup() {
             let lexer = Lexer(withPattern: "(2:aaa)")
             let tmp = lexer.analyze()
-            guard let capture = tmp as? CaptureGroup else {
+            guard let captureToken = tmp as? CaptureGroup else {
+                return
+            }
+            XCTAssertEqual(captureToken.getNum(), 2)
+            XCTAssertEqual(captureToken.tag, 258)
+        }
+        
+        func testCorrectAnalyzingTokenOfRepeatTokenWithAllBorders() {
+            let lexer = Lexer(withPattern: "{2,5}")
+            let tmp = lexer.analyze()
+            guard let repeatToken = tmp as? TokenRepeat else {
                 print("literal")
                 return
             }
-            print(capture.getNum())
+            
+            XCTAssertEqual(repeatToken.start, 2)
+            XCTAssertEqual(repeatToken.end, 5)
+            XCTAssertEqual(repeatToken.tag, 257)
+        }
+        
+        func testCorrectAnalyzingOfRepeatTokenWithOnlyLowerBorder() {
+            let lexer = Lexer(withPattern: "{2,}")
+            let tmp = lexer.analyze()
+            guard let repeatToken = tmp as? TokenRepeat else {
+                print("literal")
+                return
+            }
+            
+            XCTAssertEqual(repeatToken.start, 2)
+            XCTAssertEqual(repeatToken.end, nil)
+            XCTAssertEqual(repeatToken.tag, 257)
         }
         
         
-        func testAnalyzingTokenOfGrille() {
-            let lexer1 = Lexer(withPattern: "#f")
-            let tmp = lexer1.analyze()
+        func testIncorrectAnalyzingTokenOfRepeatWithOnlyLowerBorder() {
+            let lexer = Lexer(withPattern: "{2}")
+            expectFatalError(expectedMessage: "Bad syntax in repeat regex structure") {
+                let _ = lexer.analyze()
+            }
+        }
+        
+        func testIncorrectAnalyzingTokenOfRepeatWithNoCloseBrace() {
+            let lexer = Lexer(withPattern: "{2")
+            expectFatalError(expectedMessage: "Bad syntax in repeat regex structure") {
+                let _ = lexer.analyze()
+            }
+        }
+        
+        func testCorrectAnalyzingTokenOfGrille() {
+            let lexer = Lexer(withPattern: "#f")
+            let tmp = lexer.analyze()
             guard let grille = tmp as? Grille else {
-                print("literal")
                 return
             }
-            print(grille.getLiteral())
+            XCTAssertEqual(102, grille.getLiteral())
+            XCTAssertEqual(35, grille.tag)
         }
         
-        func testSth() {
-//                        print(Tag.getGrilleTag())
-//                        print(Tag.getEmptyTag())
-//                        print(Tag.getOrTag())
-//                        print(Tag.getConcatenationTag())
-//                        print(Tag.getPositiveClosureTag())
-//                        print(Tag.getRepeatExpressionTag())
-//                        print(Tag.getGroupTag())
-//                        print(Tag.getEOSTag())
-        }
-      
         
-        func testParser1() {
-            let lexer = Lexer(withPattern: "a|b")
+        func testMove() {
+            let lexer = Lexer(withPattern: "a{2,5}")
             let parser = Parser(lexer: lexer)
-            
-            parser.program()
-            print(parser.root ?? "lol")
-            
+            XCTAssertEqual(97, parser.look.tag)
+            parser.move()
+            XCTAssertEqual(257, parser.look.tag)
         }
+        
+        
+        func testMatch() {
+            let lexer = Lexer(withPattern: "abc")
+            let parser = Parser(lexer: lexer)
+            parser.match(tag: 97)
+            XCTAssertEqual(98, parser.look.tag)
+            expectFatalError(expectedMessage: "Bad match") {
+                parser.match(tag: 97)
+            }
+        }
+        
+        
+        func testLiteralParserFunc1() {
+            let parser = Parser(lexer: Lexer(withPattern: "a"))
+            let tag = parser.literal().token.tag
+            XCTAssertNotNil(parser.literal() as? Literal, "Converts")
+            XCTAssertEqual(97, tag)
+        }
+        
+        
+        func testLiteralParserFunc2() {
+            let parser = Parser(lexer: Lexer(withPattern: "(2:a)"))
+            let tmp = parser.literal()
+            XCTAssertNotNil(tmp as? CaptureNode, "Converts")
+            guard let newTmp = tmp as? CaptureNode else {
+                return
+            }
+            XCTAssertEqual(258, newTmp.token.tag)
+            XCTAssertEqual(97, newTmp.child.token.tag)
+        }
+        
+        
         
         
         func testParser2() {
@@ -396,8 +458,11 @@
         func testParser6() {
             let lexer = Lexer(withPattern: "\\1(1:a)ab")
             let parser = Parser(lexer: lexer)
+
+            expectFatalError(expectedMessage: "You have to define numeric capture group before using it") {
+                parser.program()
+            }
             
-            parser.program()
             parser.root?.printNode(tabsNum: 0)
         }
         
@@ -413,7 +478,7 @@
         func testParser7() {
             let lexer = Lexer(withPattern: "a|((a|b){2,5}bc(1:a|b)f+\\1)#|")
             let parser = Parser(lexer: lexer)
-            
+
             parser.program()
             parser.root?.printNode(tabsNum: 0)
         }
@@ -428,17 +493,17 @@
         }
         
         func testLiteralTypeTransformation() {
-            let s = String(UnicodeScalar(UInt8(97)))
-            print(s)
             let literal = Literal(token: Token(tag: 97))
             let nfa = STtoNFAFormatter().handleLiteralNode(with: literal)
-            nfa.checkLine(line: "a")
+            XCTAssertTrue(nfa.checkLine(line: "a"))
+            XCTAssertFalse(nfa.checkLine(line: "b"))
         }
         
         func testEpsilonTypeTransforamtion() {
             let eps = Literal(token: Token(tag: 94))
             let nfa = STtoNFAFormatter().handleEpsilonNode(with: eps)
-            nfa.checkLine(line: "^")
+            XCTAssertTrue(nfa.checkLine(line: ""))
+            XCTAssertFalse(nfa.checkLine(line: "a"))
         }
         
         func testOrTypeTransformation() {
@@ -450,8 +515,10 @@
             let nfa2 = formatter.handleLiteralNode(with: eps)
             
             let nfa = formatter.handleOrNode(firstNFA: nfa1, secondNFA: nfa2)
-            nfa.printNFAinfo()
-            nfa.checkLine(line: "a")
+            
+            XCTAssertTrue(nfa.checkLine(line: "a"))
+            XCTAssertTrue(nfa.checkLine(line: "b"))
+            XCTAssertFalse(nfa.checkLine(line: "c"))
         }
         
         func testAndTypeTransformation() {
@@ -468,8 +535,127 @@
             let nfa4 = formatter.handleLiteralNode(with: literal2)
             
             let nfa = formatter.handleAndNode(firstNFA: nfa3, secondNFA: nfa4)
-            nfa.printNFAinfo()  
+            
+            XCTAssertTrue(nfa.checkLine(line: "an"))
+            XCTAssertTrue(nfa.checkLine(line: "bn"))
+            XCTAssertFalse(nfa.checkLine(line: "ab"))
         }
+        
+        func testKleneeTypeTranformations() {
+            let formatter = STtoNFAFormatter()
+            let literal = Literal(token: Token(tag: 97))
+            let nfa1 = formatter.handleLiteralNode(with: literal)
+            
+            let nfa = formatter.handleKleneeNode(inputNFA: nfa1)
+            
+            XCTAssertTrue(nfa.checkLine(line: ""))
+            XCTAssertTrue(nfa.checkLine(line: "a"))
+            XCTAssertTrue(nfa.checkLine(line: "aa"))
+            XCTAssertTrue(nfa.checkLine(line: "aaaaa"))
+            
+            XCTAssertFalse(nfa.checkLine(line: "b"))
+        }
+        
+        func testPositiveClosureTypeTransformation() {
+            let formatter = STtoNFAFormatter()
+            let literal = Literal(token: Token(tag: 97))
+            let nfa1 = formatter.handleLiteralNode(with: literal)
+            
+            let nfa = formatter.handlePositiveClosureNode(inputNFA: nfa1)
+
+            XCTAssertFalse(nfa.checkLine(line: ""))
+            
+            XCTAssertTrue(nfa.checkLine(line: "a"))
+            XCTAssertTrue(nfa.checkLine(line: "aa"))
+            XCTAssertTrue(nfa.checkLine(line: "aaa"))
+            XCTAssertTrue(nfa.checkLine(line: "aaaaa"))
+        }
+        
+        
+        func testRepeatTypeTransformation() {
+            let formatter = STtoNFAFormatter()
+            let literal = Literal(token: Token(tag: 97))
+            let nfa1 = formatter.handleLiteralNode(with: literal)
+            
+            let nfa = formatter.handleRepeatNode(inputNFA: nfa1, lowerBorder: 2, higherBorder: 5)
+
+            XCTAssertFalse(nfa.checkLine(line: ""))
+            XCTAssertFalse(nfa.checkLine(line: "a"))
+
+            XCTAssertTrue(nfa.checkLine(line: "aa"))
+            XCTAssertTrue(nfa.checkLine(line: "aaa"))
+            XCTAssertTrue(nfa.checkLine(line: "aaaaa"))
+
+            XCTAssertFalse(nfa.checkLine(line: "aaaaaa"))
+        }
+        
+        
+        func testRegexToNFAtransformation1() {
+            let lexer = Lexer(withPattern: "ab|b+")
+            let parser = Parser(lexer: lexer)
+            parser.program()
+            
+            let formatter = STtoNFAFormatter()
+            let nfa = formatter.makeNFA(rootOfSyntaxTree: parser.root!)
+            XCTAssertTrue(nfa.checkLine(line: "ab"))
+            XCTAssertTrue(nfa.checkLine(line: "b"))
+            XCTAssertTrue(nfa.checkLine(line: "bbb"))
+            
+            XCTAssertFalse(nfa.checkLine(line: "a"))
+        }
+        
+        
+        func testNFA2() {
+            let lexer = Lexer(withPattern: "mephi|mipt|msu")
+            let parser = Parser(lexer: lexer)
+            
+            parser.program()
+            parser.root?.printNode(tabsNum: 0)
+            let formatter = STtoNFAFormatter()
+            let nfa = formatter.makeNFA(rootOfSyntaxTree: parser.root!)
+            
+            XCTAssertTrue(nfa.checkLine(line: "mephi"))
+            XCTAssertTrue(nfa.checkLine(line: "mipt"))
+            XCTAssertTrue(nfa.checkLine(line: "msu"))
+            
+            XCTAssertFalse(nfa.checkLine(line: "hse"))
+        }
+        
+
+        
+        
+        func testNFA3() {
+            let lexer = Lexer(withPattern: "(mephi){4,5}|(mipt)+")
+            let parser = Parser(lexer: lexer)
+            
+            parser.program()
+            parser.root?.printNode(tabsNum: 0)
+            let formatter = STtoNFAFormatter()
+            let nfa = formatter.makeNFA(rootOfSyntaxTree: parser.root!)
+            
+
+            XCTAssertFalse(nfa.checkLine(line: "mephimephimephi"))
+            
+            XCTAssertTrue(nfa.checkLine(line: "mephimephimephimephi"))
+            XCTAssertTrue(nfa.checkLine(line: "mephimephimephimephimephi"))
+            XCTAssertTrue(nfa.checkLine(line: "mipt"))
+            XCTAssertTrue(nfa.checkLine(line: "miptmipt"))
+            
+        }
+        
+        
+        func testNFA4() {
+            let lexer = Lexer(withPattern: "a{2,}")
+            let parser = Parser(lexer: lexer)
+            
+            parser.program()
+            parser.root?.printNode(tabsNum: 0)
+            let formatter = STtoNFAFormatter()
+            let nfa = formatter.makeNFA(rootOfSyntaxTree: parser.root!)
+            nfa.printNFAinfo()
+            XCTAssertTrue(nfa.checkLine(line: "aa"))
+        }
+        
         
     }
     
@@ -494,7 +680,4 @@
             } while (true)
         }
     }
-    
-    
-    //    a|(a{2,5}bc(1:a|b)f+\1)#|
 

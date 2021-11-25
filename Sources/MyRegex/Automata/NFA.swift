@@ -33,7 +33,7 @@ final public class NFA<State: Hashable, Symbol: Hashable>: Automata {
          ts: [(start: State, symbol: Symbol?, destination: State)],
          epsTs: [(start: State, destination: State)]) {
         
-//        self.alphabet = alphabet
+        //        self.alphabet = alphabet
         self.states = states
         self.initState = initState
         self.acceptStates = acceptStates
@@ -101,6 +101,7 @@ final public class NFA<State: Hashable, Symbol: Hashable>: Automata {
         } else {
             self.transitions[start, symbol] = [destination]
         }
+        
     }
     
     func addTransition(ts: (start: State, symbol: Symbol?, destination: State)) {
@@ -115,6 +116,7 @@ final public class NFA<State: Hashable, Symbol: Hashable>: Automata {
         for transition in ts {
             self.addTransition(from: transition.start, for: nil, to: transition.destination)
         }
+        self.currentStates = epsClosureHandlerForState(state: initState)
     }
     
     func addTransitions(ts: [(start: State, symbol: Symbol?, destination: State)]) {
@@ -127,6 +129,7 @@ final public class NFA<State: Hashable, Symbol: Hashable>: Automata {
     
     func checkLine(line: String) -> Bool {
         var current: AutomataStatus? = nil
+        var flag = false
         for c in line {
             print("Before transition: \(self.currentStates)")
             guard let symbol = String(c) as? Symbol else {
@@ -135,9 +138,31 @@ final public class NFA<State: Hashable, Symbol: Hashable>: Automata {
             
             current = self.transit(with: symbol)
             print("After transition: \(self.currentStates)")
+            flag = true
         }
+        
+        if !(currentStates.isDisjoint(with: acceptStates)) {
+            current = .acceptable
+        } else if !(currentStates.isEmpty) {
+            current = .common
+        }
+        
         print(current == .acceptable ? "Acceptable" : "Not acceptable")
+        
+        currentStates = epsClosureHandlerForState(state: initState)
         return current == .acceptable ? true : false
+    }
+    
+    
+    func copy() -> NFA<State, Symbol> {
+        let nfa = NFA<State, Symbol>(states: self.states, initState: self.initState, acceptStates: self.acceptStates, ts: [], epsTs: [])
+        
+        self.transitions.stored.forEach { (key, value) in
+            nfa.transitions.stored[key] = value
+        }
+        nfa.transitions.storedKeys = nfa.transitions.storedKeys.union(self.transitions.storedKeys)
+        nfa.currentStates = self.currentStates
+        return nfa
     }
     
     

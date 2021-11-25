@@ -10,7 +10,7 @@ import Foundation
 
 final class RepeatExpression: Node {
     
-    private let targetNode: Node
+    let targetNode: Node
     
     init(targetNode: Node, token: Token) {
         self.targetNode = targetNode

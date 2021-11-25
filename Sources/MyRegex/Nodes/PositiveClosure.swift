@@ -10,7 +10,7 @@ import Foundation
 
 final class PositiveClosure: Node {
     
-    private let targetNode: Node
+    let targetNode: Node
     
     init(targetNode: Node) {
         self.targetNode = targetNode

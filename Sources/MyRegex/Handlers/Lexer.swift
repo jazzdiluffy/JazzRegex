@@ -26,7 +26,6 @@ final class Lexer {
         if position >= pattern.length {
             isEOS = true
         } else {
-            print(pullOut(at: position))
             if pullOut(at: position) == "{" {
                 
                 var tmp = position + 1
@@ -34,15 +33,15 @@ final class Lexer {
                     tmp += 1
                 }
                 if pullOut(at: tmp) != "," || tmp == position + 1 {
-                    fatalError()
+                    fatalError("Bad syntax in repeat regex structure")
                 }
                 guard let start = Int(pattern[position+1 ..< tmp]) else {
                     fatalError()
                 }
                 position = tmp + 1
-                var end: Int = -100
+                var end: Int? = nil
                 if pullOut(at: position) == "}" {
-                    end = -1
+                    end = nil
                 } else {
                     tmp += 1
                     if Int(pullOut(at: tmp)) == nil {
@@ -58,7 +57,7 @@ final class Lexer {
                     position = tmp
                 }
                 if pullOut(at: position) != "}" {
-                    fatalError()
+                    fatalError("Bad syntax in repeat regex structure")
                 }
                 position += 1
                 return TokenRepeat(start: start, end: end)
@@ -69,7 +68,6 @@ final class Lexer {
                     tmp += 1
                 }
                 if pullOut(at: tmp) == ":" && tmp != position + 1 {
-                    
                     guard let captureGroupNumber = Int(pattern[position+1 ..< tmp]) else {
                         fatalError("Cant convert \"\(pattern[position+1 ..< tmp])\" to Int in capture group")
                     }
@@ -104,7 +102,6 @@ final class Lexer {
                 return Group(number: groupNumber)
                 
             } else {
-                
                 if pullOut(at: position) >= " " {
                     guard let tag = Character(pullOut(at: position)).asciiValue else {
                         fatalError()

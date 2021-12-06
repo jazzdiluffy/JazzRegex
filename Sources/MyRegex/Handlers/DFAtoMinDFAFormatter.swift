@@ -22,16 +22,19 @@ final class DFAtoMinDFAFormatter {
     func minimizeDFA() -> DFA<String, String> {
         var resultPiSplit: [Set<String>] = makeStartPiSplit()
         var tmpSplit = makeNewPiSplit(previous: resultPiSplit)
+        
         while tmpSplit != resultPiSplit {
             resultPiSplit = tmpSplit
             tmpSplit = makeNewPiSplit(previous: resultPiSplit)
+            
         }
-         return constructDFA(from: resultPiSplit)
+        
+        return constructDFA(from: resultPiSplit)
     }
     
     func findToWhichStateTransitionIsNedeed(from state: String, by symbol: String, statesReps: [String:Set<String>]) -> String? {
         for (key, value) in statesReps {
-            if value.contains(dfa.nextState(from: state, by: symbol)) {
+            if value.contains(dfa.nextState(from: (statesReps[state]?.first)!, by: symbol)) {
                 return key
             }
         }
@@ -48,7 +51,7 @@ final class DFAtoMinDFAFormatter {
         
         for statesSet in finalPiSplit {
             stateIndex += 1
-            let newStateName = "S\(stateIndex)"
+            let newStateName = "M\(stateIndex)"
             resultDFA.states.insert(newStateName)
             newStatesWithReps[newStateName] = statesSet
             if statesSet.contains(dfa.initState) {
@@ -82,13 +85,14 @@ final class DFAtoMinDFAFormatter {
     }
     
     func makeNewPiSplit(previous piSplit: [Set<String>] ) -> [Set<String>] {
-        var newPiSplit: [Set<String>] = [[]]
+        var newPiSplit: [Set<String>] = []
         
         for statesSet in piSplit {
             for state in statesSet {
-                let tmpSet = statesSet.filter { _ in
+                
+                let tmpSet = statesSet.filter {
                     for symbol in dfa.alphabet {
-                        if (!belongToSameGroup(firstState: dfa.nextState(from: state, by: symbol), secondState: dfa.nextState(from: state, by: symbol), piSplit: piSplit)) {
+                        if (!belongToSameGroup(firstState: dfa.nextState(from: state, by: symbol), secondState: dfa.nextState(from: $0, by: symbol), piSplit: piSplit)) {
                             return false
                         }
                     }
@@ -97,6 +101,7 @@ final class DFAtoMinDFAFormatter {
                 if (!newPiSplit.contains(tmpSet)) {
                     newPiSplit.append(tmpSet)
                 }
+                
             }
         }
         

@@ -772,8 +772,9 @@
             
             let minimizeFormatter = DFAtoMinDFAFormatter(dfa: dfa)
             let minDFA = minimizeFormatter.minimizeDFA()
-            
+            print(minDFA.initState)
             print(minDFA)
+            
         }
     }
     

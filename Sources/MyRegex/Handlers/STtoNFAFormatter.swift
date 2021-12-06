@@ -356,6 +356,7 @@ final class STtoNFAFormatter {
         return nfa
     }
     
+    
     func handleRepeatNode(inputNFA: NFA<String, String>, lowerBorder: Int, higherBorder: Int?) -> NFA<String, String> {
         guard let unwrappedHigherBorder = higherBorder else {
             var leftNFA = addSymbolToStateNames(inputNFA: inputNFA, symbol: "@")

@@ -79,6 +79,17 @@ final public class DFA<State: Hashable, Symbol: Hashable>: Automata {
         return status
     }
     
+    func nextState(from state: State, by symbol: Symbol) -> State {
+        guard let destination = self.transitions[state, symbol] else {
+            guard let defaultDestination = self.defaultTransitions[state, symbol] else {
+                print("You should define transition for symbol \"\(symbol)\"")
+                fatalError("There is no defined transition for state - \"\(self.currentState)\"")
+            }
+
+            return defaultDestination
+        }
+        return destination
+    }
     
     
     // функции добавления переходов
@@ -172,6 +183,7 @@ final public class DFA<State: Hashable, Symbol: Hashable>: Automata {
     
     func checkLine(line: String) -> Bool {
         var current: AutomataStatus? = nil
+        
         self.validateDFA()
         for c in line {
             guard let symbol = String(c) as? Symbol else {
@@ -218,3 +230,4 @@ extension DFA: CustomStringConvertible {
         return result
     }
 }
+

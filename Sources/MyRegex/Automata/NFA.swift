@@ -85,6 +85,16 @@ final public class NFA<State: Hashable, Symbol: Hashable>: Automata {
         return nil
     }
     
+    func getStatesSet(from statesSet: Set<State>, by symbol: Symbol) -> Set<State> {
+        var targetStates = Set<State>()
+        for state in statesSet {
+            if let destinationStates = self.transitions[state, symbol] {
+                targetStates.formUnion(destinationStates)
+            }
+        }
+        return targetStates
+    }
+    
     func addTransition(from start: State, for symbol: Symbol?, to destination: State) {
         guard let symbol = symbol else {
             if let _ = self.epsilonTransitions[start] {

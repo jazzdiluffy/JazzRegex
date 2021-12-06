@@ -657,9 +657,128 @@
         }
         
         
+        func testGettingStartState() {
+            let lexer = Lexer(withPattern: "a|b")
+            let parser = Parser(lexer: lexer)
+            parser.program()
+            
+            let nfa = STtoNFAFormatter().makeNFA(rootOfSyntaxTree: parser.root!)
+            nfa.printNFAinfo()
+            let formatter = NFAtoDFAformatter(nfa: nfa)
+            formatter.getStartState()
+            XCTAssertEqual(formatter.dfa.initState, "S0")
+            XCTAssertEqual(["S0": Set(["1", "5", "3"])], formatter.statesRep)
+            XCTAssertEqual(["S0"], formatter.states)
+        }
+        
+        func testGettingAlphabet() {
+            let lexer = Lexer(withPattern: "abcdefg|m")
+            let parser = Parser(lexer: lexer)
+            parser.program()
+            
+            let nfa = STtoNFAFormatter().makeNFA(rootOfSyntaxTree: parser.root!)
+            nfa.printNFAinfo()
+            let formatter = NFAtoDFAformatter(nfa: nfa)
+            formatter.getAlphabetFromNFA()
+            XCTAssertEqual(formatter.alphabet, ["a", "b", "c", "d", "e", "f", "g", "m"])
+            XCTAssertEqual(formatter.dfa.alphabet, ["a", "b", "c", "d", "e", "f", "g", "m"])
+        }
+        
+        func testDFAconstruction() {
+            let nfa = NFA(states: ["A", "BI", "G", "C", "E", "D", "F", "H", "J"],
+                          initState: "A",
+                          acceptStates: ["J"],
+                          ts: [
+                            ("A", "letter", "BI"),
+                            ("C", "letter", "D"),
+                            ("E", "digit", "F")
+                          ],
+                          epsTs: [
+                            ("BI", "G"),
+                            ("G", "C"),
+                            ("G", "E"),
+                            ("D", "H"),
+                            ("F", "H"),
+                            ("H", "G"),
+                            ("H", "J"),
+                            ("BI", "J")
+                          ])
+            let formatter = NFAtoDFAformatter(nfa: nfa)
+            formatter.constructDFA()
+            let dfa = formatter.dfa
+            
+            print(dfa.initState)
+            print(dfa.states)
+            print("================")
+            print(dfa)
+        }
+
+        func testDFAconstruction1() {
+            let lexer = Lexer(withPattern: "a{2,3}|b")
+            let parser = Parser(lexer: lexer)
+            
+            parser.program()
+            parser.root?.printNode(tabsNum: 0)
+            let nfaFormatter = STtoNFAFormatter()
+            let nfa = nfaFormatter.makeNFA(rootOfSyntaxTree: parser.root!)
+            nfa.checkLine(line: "aa")
+            let dfaFormatter = NFAtoDFAformatter(nfa: nfa)
+            dfaFormatter.constructDFA()
+            let dfa = dfaFormatter.dfa
+            print(dfa.checkLine(line: "aa") ? "Acceptable dfa" : "Not accceptable dfa")
+        }
+        
+        func testMakeStartPiSplit() {
+            let lexer = Lexer(withPattern: "a|b")
+            let parser = Parser(lexer: lexer)
+            
+            parser.program()
+            parser.root?.printNode(tabsNum: 0)
+            let nfaFormatter = STtoNFAFormatter()
+            let nfa = nfaFormatter.makeNFA(rootOfSyntaxTree: parser.root!)
+            let dfaFormatter = NFAtoDFAformatter(nfa: nfa)
+            dfaFormatter.constructDFA()
+            let dfa = dfaFormatter.dfa
+            
+            let minDFAformatter = DFAtoMinDFAFormatter(dfa: dfa)
+            let result = minDFAformatter.makeStartPiSplit()
+            print(result[0])
+            print(result[1])
+            print(dfa)
+        }
+        
+        func testDFAMinimization() {
+            let nfa = NFA(states: ["A", "BI", "G", "C", "E", "D", "F", "H", "J"],
+                          initState: "A",
+                          acceptStates: ["J"],
+                          ts: [
+                            ("A", "letter", "BI"),
+                            ("C", "letter", "D"),
+                            ("E", "digit", "F")
+                          ],
+                          epsTs: [
+                            ("BI", "G"),
+                            ("G", "C"),
+                            ("G", "E"),
+                            ("D", "H"),
+                            ("F", "H"),
+                            ("H", "G"),
+                            ("H", "J"),
+                            ("BI", "J")
+                          ])
+            let formatter = NFAtoDFAformatter(nfa: nfa)
+            formatter.constructDFA()
+            let dfa = formatter.dfa
+            
+            let minimizeFormatter = DFAtoMinDFAFormatter(dfa: dfa)
+            let minDFA = minimizeFormatter.minimizeDFA()
+            
+            print(minDFA)
+        }
     }
     
     extension XCTestCase {
+        
         func expectFatalError(expectedMessage: String, testcase: @escaping () -> Void) {
             let expectation = self.expectation(description: "expectingFatalError")
             var assertionMessage: String? = nil
@@ -680,4 +799,3 @@
             } while (true)
         }
     }
-

@@ -194,6 +194,29 @@ final public class DFA<State: Hashable, Symbol: Hashable>: Automata {
         return current == .acceptable ? true : false
     }
     
+    func copy() -> DFA<State, Symbol> {
+        let dfaCopy = DFA(alphabet: self.alphabet,
+                      states: self.states,
+                      initState: self.initState,
+                      acceptStates: self.acceptStates)
+        self.transitions.stored.forEach { (key, value) in
+            dfaCopy.transitions.stored[key] = value
+        }
+        self.transitions.storedKeys.forEach {
+            dfaCopy.transitions.storedKeys = dfaCopy.transitions.storedKeys.union([$0])
+        }
+        
+        self.defaultTransitions.stored.forEach { (key, value) in
+            dfaCopy.defaultTransitions.stored[key] = value
+        }
+        
+        self.defaultTransitions.storedKeys.forEach {
+            dfaCopy.defaultTransitions.storedKeys = dfaCopy.defaultTransitions.storedKeys.union([$0])
+        }
+        
+        return dfaCopy
+    }
+    
 }
 
 

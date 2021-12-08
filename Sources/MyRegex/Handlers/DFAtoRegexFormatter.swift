@@ -174,13 +174,18 @@ final class DFAtoRegexFormatter {
             return (from: qsTransition.q, by: secondPartOfCondition, to: spTransition.p)
         }
         
-        newTransitionCondition += "\(qpTransition.symbol)|\(secondPartOfCondition)"
+        if qpTransition.symbol.contains("|") {
+            newTransitionCondition += "(\(qpTransition.symbol))|\(secondPartOfCondition)"
+        } else {
+            newTransitionCondition += "\(qpTransition.symbol)|\(secondPartOfCondition)"
+        }
+        
         
         return (from: qsTransition.q, by: newTransitionCondition, to: spTransition.p)
     }
     
     
-    // Returns regex like: (R|SU*T)
+    // Returns regex like: (R|SU*T)*SU* or (R)*
     func getRegexAfterEliminationOfOtherStates(with pair: (start: String, accept: String)) -> String {
         var result = ""
         
@@ -205,8 +210,14 @@ final class DFAtoRegexFormatter {
             // check S
             for rule in lastAlphabet {
                 if let finded = tmpDFA.transitions[pair.start, rule], finded == pair.accept {
-                    firstPartResult += "|(\(rule))"
-                    secondPartResult += "(\(rule))"
+                    if rule.contains("|") {
+                        firstPartResult += "|(\(rule))"
+                        secondPartResult += "(\(rule))"
+                    } else {
+                        firstPartResult += "|\(rule)"
+                        secondPartResult += "\(rule)"
+                    }
+                    
                 }
             }
             
@@ -226,9 +237,18 @@ final class DFAtoRegexFormatter {
             for rule in lastAlphabet {
                 if let finded = tmpDFA.transitions[pair.accept, rule], finded == pair.start {
                     if firstPartResult.contains("|") {
-                        firstPartResult += "(\(rule)))*"
+                        if rule.contains("|") {
+                            firstPartResult += "(\(rule)))*"
+                        } else {
+                            firstPartResult += "\(rule))*"
+                        }
+                        
                     } else {
-                        firstPartResult += "|(\(rule)))*"
+                        if rule.contains("|") {
+                            firstPartResult += "|(\(rule)))*"
+                        } else {
+                            firstPartResult += "|\(rule))*"
+                        }
                     }
                 }
             }

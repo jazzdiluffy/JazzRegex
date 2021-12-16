@@ -83,6 +83,7 @@ final class Lexer {
                 
                 position += 1
                 let grilleToken = Grille(literal: pullOut(at: position))
+        
                 position += 1
                 return grilleToken
                 

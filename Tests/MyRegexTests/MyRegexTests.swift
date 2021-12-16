@@ -721,11 +721,10 @@
             parser.root?.printNode(tabsNum: 0)
             let nfaFormatter = STtoNFAFormatter()
             let nfa = nfaFormatter.makeNFA(rootOfSyntaxTree: parser.root!)
-            nfa.checkLine(line: "aa")
             let dfaFormatter = NFAtoDFAformatter(nfa: nfa)
             dfaFormatter.constructDFA()
             let dfa = dfaFormatter.dfa
-            print(dfa.checkLine(line: "aa") ? "Acceptable dfa" : "Not accceptable dfa")
+            print(dfa.checkLine(line: "aaa") ? "Acceptable dfa" : "Not accceptable dfa")
         }
         
         func testMakeStartPiSplit() {
@@ -742,10 +741,10 @@
             
             let minDFAformatter = DFAtoMinDFAFormatter(dfa: dfa)
             let result = minDFAformatter.makeStartPiSplit()
-            print(result[0])
-            print(result[1])
-            print(dfa)
+            XCTAssertEqual(["S1", "S2"], result[0])
+            XCTAssertEqual(["S0", "S3"], result[1])
         }
+       
         
         func testDFAMinimization() {
             let nfa = NFA(states: ["A", "BI", "G", "C", "E", "D", "F", "H", "J"],
@@ -774,8 +773,212 @@
             let minDFA = minimizeFormatter.minimizeDFA()
             print(minDFA.initState)
             print(minDFA)
+        }
+        
+        
+        func testStartAcceptDivision() {
+            let defaultTs = [
+                (start: "s0", symbol: "b", defaultDestination: "Error"),
+                (start: "s0", symbol: "c", defaultDestination: "Error"),
+                (start: "s1", symbol: "a", defaultDestination: "Error"),
+                (start: "s1", symbol: "c", defaultDestination: "Error"),
+                (start: "s2", symbol: "a", defaultDestination: "Error"),
+                (start: "s2", symbol: "b", defaultDestination: "Error")
+              ]
+            let dfa = DFA(alphabet: ["a", "b", "c"],
+                          states: ["s0", "s1", "s2", "s3", "s4", "Error"],
+                          initState: "s0",
+                          acceptStates: ["s2", "s3", "s4", "s0"],
+                          ts: [
+                            ("s0", "a", "s1"),
+                            ("s1", "b", "s2"),
+                            ("s2", "c", "s2")
+                          ],
+                          defaultTs: defaultTs)
+            dfa.makeAllDefaultTransitionsGoToErrorState()
+            
+            let formatter = DFAtoRegexFormatter(dfa: dfa)
+            print(formatter.getStartAcceptablePair())
+        }
+        
+        func testRegexRestore() {
+            let dfa = DFA(alphabet: ["0", "1"],
+                          states: ["A", "B", "C"],
+                          initState: "A",
+                          acceptStates: ["A", "C"],
+                          ts: [
+                            ("A", "1", "A"),
+                            ("A", "0", "B"),
+                            ("B", "1", "C"),
+                            ("B", "0", "A"),
+                            ("C", "1", "C"),
+                            ("C", "0", "B")
+                            
+                          ],
+                          defaultTs: [])
+            
+            let formatter = DFAtoRegexFormatter(dfa: dfa)
+            print(formatter.restoreRegex())
+        }
+        
+        
+        func testCaptureGroupNFABuild() {
+            let lexer = Lexer(withPattern: "(1:a|b)(2:(ab)+)")
+            let parser = Parser(lexer: lexer)
+            parser.program()
+            
+            let nfa = STtoNFAFormatter().makeNFA(rootOfSyntaxTree: parser.root!)
+            nfa.printNFAinfo()
+            XCTAssertTrue(nfa.checkLine(line: "babab"))
+        }
+        
+        func testHasNFAnedeedCaptureGroups() {
+            let lexer = Lexer(withPattern: "(1:a|b)(2:(ab)+)|(3:a+(b|c))")
+            let parser = Parser(lexer: lexer)
+            parser.program()
+            let formatter = STtoNFAFormatter()
+            let nfa = formatter.makeNFA(rootOfSyntaxTree: parser.root!)
+            nfa.printNFAinfo()
+            print(nfa.captureGroups)
+        }
+        
+        func testSearchingSubstring1() {
+            let regex = RegEx(pattern: "eaf|bbb")
+            XCTAssertEqual("eaf", regex.searchSubstring(inside: "cdeafg")!)
+        }
+        
+        func testSearchingSubstring2() {
+            let regex = RegEx(pattern: "(a|bc)+mephi")
+            XCTAssertEqual("bcbcbcbcmephi", regex.searchSubstring(inside: "mynameisilyaamephlolbcbcbcbcmephiishard")!)
+        }
+        
+        func testSearchingSubstring3() {
+            let regex = RegEx(pattern: "(1:a|(bc)+)(2:(mipt|msu){2,5})")
+            let testText = "mynameisilyaabcbcmsumsumsulol"
+            XCTAssertEqual("bcbcmsumsumsu", regex.searchSubstring(inside: testText)!)
+            XCTAssertEqual(Optional("a"), regex.captureGroups[testText, 1])
+            XCTAssertEqual(Optional("msumsumsu"), regex.captureGroups[testText, 2])
+        }
+        
+        func testSearchingSubstring4() {
+            let pattern = """
+            (1:(il.ya|vadik)) - (2:(a|b|c|d|e|f)+@gmail#.com) - (3:89((1|2|3)+){9,})
+            """
+            let regex = RegEx(pattern: pattern)
+            let testText = """
+            egor - abcdjskf@rambler.eu - 6404385
+            artem *** dlkngsklg@bombom.bom *** telephone
+            ilya - abcedabed@gmail.com - 89321123231
+            """
+            XCTAssertEqual(Optional("ilya - abcedabed@gmail.com - 89321123231"), regex.searchSubstring(inside: testText))
+            XCTAssertEqual(Optional("ilya"), regex.captureGroups[testText, 1])
+            XCTAssertEqual(Optional("abcedabed@gmail.com"), regex.captureGroups[testText, 2])
+            XCTAssertEqual(Optional("89321123231"), regex.captureGroups[testText, 3])
+        }
+        
+        func testCapture() {
+            let pattern = """
+            (1:de(3:(2:abc)f))
+            """
+            let regex = RegEx(pattern: pattern)
+            regex.compile()
+            let testText = """
+            deabcf
+            """
+            print(regex.dfa.checkLine(line: testText))
+            print(regex.captureGroups[testText, 1])
+            print(regex.captureGroups[testText, 2])
+            print(regex.captureGroups[testText, 3])
             
         }
+        
+        
+        func testSearchingSubstringGreed1() {
+            let pattern = """
+            (abc)+
+            """
+            let regex = RegEx(pattern: pattern)
+            let testText = """
+            abcabcabc
+            """
+            XCTAssertEqual(Optional("abcabcabc"), regex.searchSubstring(inside: testText))
+        }
+        
+        func testSearchingSubstringGreed2() {
+            let pattern = """
+            (abc){2,5}
+            """
+            let regex = RegEx(pattern: pattern)
+            let testText = """
+            abcabcabcabcabcabcabcabcabcabc
+            """
+            regex.compile()
+            XCTAssertEqual(Optional("abcabcabcabcabc"), regex.searchSubstring(inside: testText))
+        }
+        
+        func testInversedLang() {
+            let pattern = """
+            a|bc
+            """
+            let regex = RegEx(pattern: pattern)
+            regex.compile()
+            let inversedRegEx = regex.inverseLang()
+            XCTAssertTrue(inversedRegEx.dfa.checkLine(line: "a"))
+            XCTAssertTrue(inversedRegEx.dfa.checkLine(line: "cb"))
+            XCTAssertFalse(inversedRegEx.dfa.checkLine(line: "bc"))
+        }
+        
+        func testInversedLang1() {
+            let pattern = """
+            (abc)+|def|(hig){2,5}|(klm){3,}
+            """
+            let regex = RegEx(pattern: pattern)
+            regex.compile()
+            let inversedRegEx = regex.inverseLang()
+            XCTAssertTrue(inversedRegEx.dfa.checkLine(line: "cbacbacbacba"))
+            XCTAssertFalse(inversedRegEx.dfa.checkLine(line: "abcabcabc"))
+            
+            XCTAssertTrue(inversedRegEx.dfa.checkLine(line: "fed"))
+            XCTAssertFalse(inversedRegEx.dfa.checkLine(line: "def"))
+            
+            XCTAssertTrue(inversedRegEx.dfa.checkLine(line: "gihgihgihgih"))
+            XCTAssertFalse(inversedRegEx.dfa.checkLine(line: "highighig"))
+            
+            XCTAssertTrue(inversedRegEx.dfa.checkLine(line: "mlkmlkmlk"))
+            XCTAssertFalse(inversedRegEx.dfa.checkLine(line: "klmklmklm"))
+        }
+        
+        
+        func testLangIntersection1() {
+
+            let pattern1 = "abc|acb1|(def)+|(def1)+"
+            let pattern2 = "abc|(def)+|(11111)"
+            
+            let regex1 = RegEx(pattern: pattern1)
+            let regex2 = RegEx(pattern: pattern2)
+            
+            let intersectionRegex = regex1.intersection(with: regex2)
+            
+            XCTAssertTrue(intersectionRegex.dfa.checkLine(line: "abc"))
+            XCTAssertFalse(intersectionRegex.dfa.checkLine(line: "abc1"))
+            
+            XCTAssertTrue(intersectionRegex.dfa.checkLine(line: "defdefdef"))
+            XCTAssertFalse(intersectionRegex.dfa.checkLine(line: "def1def1def1"))
+        }
+        
+        func testLangIntersection2() {
+            let pattern1 = "(hig){2,5}|(hig1){2,5}"
+            let pattern2 = "(hig){2,5}|(1111)"
+            
+            let regex1 = RegEx(pattern: pattern1)
+            let regex2 = RegEx(pattern: pattern2)
+            
+            let intersectionRegex = regex1.intersection(with: regex2)
+            
+            XCTAssertTrue(intersectionRegex.dfa.checkLine(line: "highighighig"))
+            XCTAssertFalse(intersectionRegex.dfa.checkLine(line: "hig1hig1hig1"))
+        }
+        
     }
     
     extension XCTestCase {

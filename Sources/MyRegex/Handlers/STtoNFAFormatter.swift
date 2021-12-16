@@ -12,6 +12,8 @@ final class STtoNFAFormatter {
     
     private var stateName = 0
     
+    var captureGroups: [Int : Node] = [:]
+    
     init() {
         
     }
@@ -373,32 +375,32 @@ final class STtoNFAFormatter {
             leftNFA.currentStates = leftNFA.epsClosureHandlerForState(state: leftNFA.initState)
             return leftNFA
         }
-        print("🥡 Start right NFA: \n")
+//        print("🥡 Start right NFA: \n")
         var rightNFA = handleEpsilonNode(with: Literal(token: Token(tag: 94)))
-        rightNFA.printNFAinfo()
-        print("🥡 Start inputNFAcopy: \n")
+//        rightNFA.printNFAinfo()
+//        print("🥡 Start inputNFAcopy: \n")
         var inputNFAcopy = inputNFA
         
-        inputNFAcopy.printNFAinfo()
+//        inputNFAcopy.printNFAinfo()
         let range = unwrappedHigherBorder - lowerBorder
-        print("🥡 Start growing NFA: \n")
-        var growingNFA = inputNFA
-        growingNFA.printNFAinfo()
+//        print("🥡 Start growing NFA: \n")
+        var growingNFA = addSymbolToStateNames(inputNFA: inputNFA, symbol: "{}")
+//        growingNFA.printNFAinfo()
         for i in 1...range {
             if i == 1 {
-                print("🏀 Right NFA iteration - \(i):\n")
-                rightNFA = handleOrNode(firstNFA: rightNFA, secondNFA: addSymbolToStateNames(inputNFA: inputNFA, symbol: "&"))
-                rightNFA.printNFAinfo()
+//                print("🏀 Right NFA iteration - \(i):\n")
+                rightNFA = handleOrNode(firstNFA: rightNFA, secondNFA: addSymbolToStateNames(inputNFA: inputNFA, symbol: "<>"))
+//                rightNFA.printNFAinfo()
             } else {
-                print("🎾 Growing NFA iteration - \(i):\n")
+//                print("🎾 Growing NFA iteration - \(i):\n")
                 
                 
-                inputNFAcopy = addSymbolToStateNames(inputNFA: inputNFA, symbol: "&")
-                growingNFA = handleAndNode(firstNFA: growingNFA, secondNFA: inputNFAcopy)
-                growingNFA.printNFAinfo()
-                print("🏀 Right NFA iteration - \(i):\n")
+                inputNFAcopy = addSymbolToStateNames(inputNFA: inputNFAcopy, symbol: "&")
+                growingNFA = handleAndNode(firstNFA: addSymbolToStateNames(inputNFA: growingNFA, symbol: "[]"), secondNFA: inputNFAcopy)
+//                growingNFA.printNFAinfo()
+//                print("🏀 Right NFA iteration - \(i):\n")
                 rightNFA = handleOrNode(firstNFA: rightNFA, secondNFA: growingNFA)
-                rightNFA.printNFAinfo()
+//                rightNFA.printNFAinfo()
             }
         }
         
@@ -413,11 +415,11 @@ final class STtoNFAFormatter {
         } else if unwrappedHigherBorder <= 0 {
             fatalError("higher border of repeat node couldnt be less or equal than zero")
         } else {
-            for i in 1..<lowerBorder {
-                print("🏉 Left NFA iteration - \(i):\n")
+            for _ in 1..<lowerBorder {
+//                print("🏉 Left NFA iteration - \(i):\n")
                 inputNFAcopy = addSymbolToStateNames(inputNFA: inputNFAcopy, symbol: "~")
                 leftNFA = handleAndNode(firstNFA: addSymbolToStateNames(inputNFA: leftNFA, symbol: "?"), secondNFA: inputNFAcopy)
-                leftNFA.printNFAinfo()
+//                leftNFA.printNFAinfo()
             }
         }
         
@@ -431,12 +433,21 @@ final class STtoNFAFormatter {
     
     func makeNFA(rootOfSyntaxTree: BinaryNode) -> NFA<String, String> {
         let nfa = handleNode(node: rootOfSyntaxTree.leftNode)
+        nfa.captureGroups = captureGroups
+        return nfa
+    }
+    
+    func makeNFA(rootOfSyntaxTree: Node) -> NFA<String, String> {
+        let nfa = handleNode(node: rootOfSyntaxTree)
+        nfa.captureGroups = captureGroups
         
         return nfa
     }
     
     func handleNode(node: Node) -> NFA<String, String> {
         var nfa = NFA<String, String>(states: [], initState: "", acceptStates: [], ts: [], epsTs: [])
+        
+        
         if let binaryNode = node as? BinaryNode {
             if let concatenationNode = binaryNode as? Concatenation {
                 nfa = handleAndNode(firstNFA: handleNode(node: concatenationNode.leftNode), secondNFA: handleNode(node: concatenationNode.rightNode))
@@ -461,7 +472,15 @@ final class STtoNFAFormatter {
                 }
                 
                 nfa = handleRepeatNode(inputNFA: handleNode(node: repeatNode.targetNode), lowerBorder: repeatToken.start, higherBorder: repeatToken.end)
-            } else {
+            } else if let captureGroupNode = node as? CaptureNode {
+                nfa = handleNode(node: captureGroupNode.child)
+                guard let token = captureGroupNode.token as? CaptureGroup else {
+                    fatalError("[DEBUG]: No id in capture group")
+                }
+                
+                captureGroups[token.num] = captureGroupNode.child
+            }
+            else {
                 fatalError("boo")
             }
         }

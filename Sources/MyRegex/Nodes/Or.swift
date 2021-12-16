@@ -34,4 +34,12 @@ final class Or: BinaryNode {
         leftNode.printNode(tabsNum: tabsNum+1)
         rightNode.printNode(tabsNum: tabsNum+1)
     }
+    
+    override func inverse() {
+        leftNode.inverse()
+        rightNode.inverse()
+        let tmp: Node = leftNode
+        leftNode = rightNode
+        rightNode = tmp
+    }
 }

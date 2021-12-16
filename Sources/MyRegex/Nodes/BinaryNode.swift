@@ -13,8 +13,8 @@ protocol BinaryNodeProtocol {
 }
 
 class BinaryNode: Node, BinaryNodeProtocol {
-    let leftNode: Node
-    let rightNode: Node
+    var leftNode: Node
+    var rightNode: Node
     
     init(workingToken: Token, left: Node, right: Node) {
         self.leftNode = left

@@ -32,4 +32,8 @@ final class RepeatExpression: Node {
         print("\(tabs)\(res)\n")
         targetNode.printNode(tabsNum: tabsNum+1)
     }
+    
+    override func inverse() {
+        targetNode.inverse()
+    }
 }

@@ -123,6 +123,7 @@ final class DFAtoRegexFormatter {
                                                      qpTransition: qpTransition,
                                                      ssTransition: ssTransition)
                 newTransitions.append(newTransition)
+                
                 newAlphabet.append(newTransition.by)
                 resultDFA.alphabet.insert(newTransition.by)
             }
@@ -192,8 +193,10 @@ final class DFAtoRegexFormatter {
         let statesToDelete = dfa.states.subtracting([pair.start, pair.accept])
         var tmpDFA = dfa.copy()
         var lastAlphabet: [String] = []
+        
         for state in statesToDelete {
             (tmpDFA, lastAlphabet) = eliminate(state: state, inputDFA: tmpDFA)
+            
         }
         
         var firstPartResult = ""
@@ -201,10 +204,11 @@ final class DFAtoRegexFormatter {
         
         if tmpDFA.states.count == 2 {
             // check R
-            for rule in lastAlphabet {
+            for rule in lastAlphabet {        
                 if let finded = tmpDFA.transitions[pair.start, rule], finded == pair.start {
                     firstPartResult += "((\(rule))"
                 }
+                
             }
             
             // check S

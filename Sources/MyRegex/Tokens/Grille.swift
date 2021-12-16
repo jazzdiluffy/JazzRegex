@@ -8,7 +8,7 @@
 import Foundation
 
 final class Grille: Token {
-    private let literal: Int
+    let literal: Int
     
     func getLiteral() -> Int {
         return literal

@@ -65,8 +65,9 @@ final public class DFA<State: Hashable, Symbol: Hashable>: Automata {
     func transit(with symbol: Symbol) -> AutomataStatus? {
         guard let destination = self.transitions[self.currentState, symbol] else {
             guard let defaultDestination = self.defaultTransitions[self.currentState, symbol] else {
-                print("You should define transition for symbol \"\(symbol)\"")
-                fatalError("There is no defined transition for state - \"\(self.currentState)\"")
+                return nil
+//                print("You should define transition for symbol \"\(symbol)\"")
+//                fatalError("There is no defined transition for state - \"\(self.currentState)\"")
             }
             self.currentState = defaultDestination
             let status: AutomataStatus = self.acceptStates.contains(currentState) ? .acceptable : .common
@@ -184,6 +185,7 @@ final public class DFA<State: Hashable, Symbol: Hashable>: Automata {
     func checkLine(line: String) -> Bool {
         var current: AutomataStatus? = nil
         
+        
         self.validateDFA()
         for c in line {
             guard let symbol = String(c) as? Symbol else {
@@ -191,6 +193,7 @@ final public class DFA<State: Hashable, Symbol: Hashable>: Automata {
             }
             current = self.transit(with: symbol)
         }
+        currentState = initState
         return current == .acceptable ? true : false
     }
     
@@ -213,6 +216,7 @@ final public class DFA<State: Hashable, Symbol: Hashable>: Automata {
         self.defaultTransitions.storedKeys.forEach {
             dfaCopy.defaultTransitions.storedKeys = dfaCopy.defaultTransitions.storedKeys.union([$0])
         }
+        dfaCopy.currentState = currentState
         
         return dfaCopy
     }

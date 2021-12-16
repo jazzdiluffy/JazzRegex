@@ -110,6 +110,12 @@ final class Parser: ParserProtocol {
             move()
             res = or()
             match(tag: Tag.getTagOfCloseBrace())
+        } else if look.tag == Tag.getGrilleTag() {
+            guard let grilleToken = look as? Grille else {
+                fatalError("Cant convert look token to grille token")
+            }
+            res = Literal(token: Token(tag: grilleToken.literal))
+            move()
         } else {
             
             res = Literal(token: look)

@@ -24,6 +24,7 @@ final public class NFA<State: Hashable, Symbol: Hashable>: Automata {
     
     var currentStates: Set<State>
     
+    var captureGroups: [Int : Node] = [:]
     
     // MARK: -Init
     
@@ -139,7 +140,6 @@ final public class NFA<State: Hashable, Symbol: Hashable>: Automata {
     
     func checkLine(line: String) -> Bool {
         var current: AutomataStatus? = nil
-        var flag = false
         for c in line {
             print("Before transition: \(self.currentStates)")
             guard let symbol = String(c) as? Symbol else {
@@ -148,7 +148,6 @@ final public class NFA<State: Hashable, Symbol: Hashable>: Automata {
             
             current = self.transit(with: symbol)
             print("After transition: \(self.currentStates)")
-            flag = true
         }
         
         if !(currentStates.isDisjoint(with: acceptStates)) {

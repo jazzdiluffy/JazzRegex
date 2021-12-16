@@ -10,7 +10,7 @@ import Foundation
 
 final class CaptureGroup: Token {
     
-    private var num: Int
+    var num: Int
     
     func getNum() -> Int {
         return num

@@ -30,4 +30,8 @@ final class CaptureNode: Node {
         print("\(tabs)\(res)\n")
         child.printNode(tabsNum: tabsNum+1)
     }
+    
+    override func inverse() {
+        child.inverse()
+    }
 }

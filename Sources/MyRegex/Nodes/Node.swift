@@ -8,11 +8,11 @@
 import Foundation
 
 protocol NodeProtocol {
-    var token: Token { get }
+    func inverse()
 }
 
 
-class Node {
+class Node: NodeProtocol {
     let token: Token
     
     init(token: Token) {
@@ -38,6 +38,9 @@ class Node {
         print("\(tabs)\(res)")
     }
     
+    func inverse() {
+        
+    }    
 }
 
 

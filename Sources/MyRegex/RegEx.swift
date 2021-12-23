@@ -186,4 +186,13 @@ final class RegEx {
         return resultRegEx
     }
     
+    func restore() -> String {
+        if !isCompiled {
+            compile()
+        }
+        
+        let formatter = DFAtoRegexFormatter(dfa: dfa)
+        return formatter.restoreRegex()
+    }
+    
 }

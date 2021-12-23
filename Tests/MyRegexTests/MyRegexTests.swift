@@ -821,6 +821,43 @@
             print(formatter.restoreRegex())
         }
         
+        func testRestoreRegex() {
+            let regex = RegEx(pattern: "hello|world")
+            regex.compile()
+            
+            let formatter = DFAtoRegexFormatter(dfa: regex.dfa)
+            let restored = formatter.restoreRegex()
+            print(restored)
+        }
+        
+        func testRestoreRegex2() {
+            let regex = RegEx(pattern: "abcabcdef")
+            regex.compile()
+            
+            let formatter = DFAtoRegexFormatter(dfa: regex.dfa)
+            let restored = formatter.restoreRegex()
+            print(restored)
+        }
+        
+        func testRestoreRegex3() {
+            let regex = RegEx(pattern: "bd|(ac)+")
+            regex.compile()
+            print(regex.restore())
+        }
+        
+        func testRestoreRegex4() {
+            let regex = RegEx(pattern: "(hello){2,4}|(ac)+")
+            regex.compile()
+            print(regex.restore())
+        }
+        
+        func testRestoreRegex5() {
+            let regex = RegEx(pattern: "(abc){4,}")
+            regex.compile()
+            print(regex.restore())
+        }
+        
+        
         
         func testCaptureGroupNFABuild() {
             let lexer = Lexer(withPattern: "(1:a|b)(2:(ab)+)")
